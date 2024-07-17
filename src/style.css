@@ -1,17 +1,18 @@
+*{
+    font-family: "DM Sans", sans-serif;
+    font-optical-sizing: auto;
+}
 body{
     display: flex;
     flex-direction: column;
     margin: 0;
-    font-family: "DM Sans", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 100;
-  font-style: normal;
 }
 
 .logo {
     display: flex;
     gap: 6px;
     padding: 0 15px 0 15px;
+    font-size: 26px;
 }
 
 header{
@@ -24,6 +25,46 @@ header{
     height: 100vh;
     width: 300px;
     background-color: #f4f3ee;
+}
+
+.add-task{
+    display: flex;
+    padding: 10px 20px 0 20px;
+    font-size: 22px;
+    gap: 4px;
+   
+}
+
+#addTaskBtn{
+    cursor: pointer;
+    background-image: url("./assets/task-add.svg");
+    background-size: 20px;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 30px;
+    border-color: #f4f3ee;
+    border-radius: 50%;
+    border-style: hidden;
+    background-color:#f4f3ee;
+
+}
+
+#addTaskBtn:hover{
+    box-shadow: 0 0 11px rgba(33,33,33,.2); 
+}
+
+#addProjectBtn{
+    cursor: pointer;
+    background-image: url("./assets/plus.svg");
+    background-size: 20px;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 30px;
+    height: 30px;
+    border-color: #f4f3ee;
+    border-radius: 50%;
+    border-style: hidden;
+    background-color:#f4f3ee;
 }
 
 .task-labels{
@@ -40,8 +81,178 @@ header{
     display: flex;
     gap: 6px;
     justify-content: space-evenly;
+    align-items: center;
+    font-size: 26px;
 }
 
 .content{
     display: flex;
+}
+
+/* The Modal (background) */
+.project-modal, .task-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 200px; /* Location of the box */
+    padding-right: 200px;
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  
+  /* Modal Content */
+  .project-modal-content, .task-modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* The Close Button */
+  .close-modal {
+    color: #aaaaaa;
+    /*float: right;*/
+    top: 300px;
+    right: 150px;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  
+  .close-modal:hover,
+  .close-modal:focus{
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+.project-form, .task-form{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+}
+.project-form{
+    justify-content: center;
+}
+
+.project-form-input:focus {
+    border: 3px solid #e0afa0;
+}
+.project-form-input{
+    text-decoration: none;
+    outline: none;
+    padding: 6px;
+    border: 2px solid #bcb8b1;
+    max-width: 100%;
+}
+
+#project-description-input{
+    display: flex;
+    height: 50px;
+    overflow:auto;
+}
+.project-submit{
+    background-color: #f4f3ee;
+    color: #463f3a;
+    border: 2px solid #e0afa0;
+    text-align: center;
+    text-decoration: none;
+}
+
+.project-list{
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+
+}
+.project-item{
+    display: flex;
+    max-height: 40px;
+    align-items: center;
+    font-size: 18px;
+    font-optical-sizing: auto;
+    text-decoration: underline;
+    text-decoration-color:#8a817c;
+    font-style: italic;
+    position: relative;
+}
+.project-item-div{
+  display: flex;
+  cursor: pointer;
+}
+/* Project Dropdown Button */
+.project-option {
+    background-image: url("./assets/project-option.svg");
+    background-color: #f4f3ee;
+    width: 15px;
+    height: 15px;
+    /* padding: 16px; */
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    display: none;
+  }
+
+  .project-item:hover .project-option{
+    display: inline-block;
+  }
+  .project-option:active{
+    display: inline-block;
+  }
+  /* Dropdown button on hover & focus */
+  .project-option:hover, .project-option:focus {
+    background-image: url("./assets/project-option.svg");
+  }
+  
+  /* The container <div> - needed to position the dropdown content */
+  .project-dropdown {
+    position: absolute;
+    right: 10px;
+    display: inline-block;
+
+  }
+  
+  /* Dropdown Content (Hidden by Default) */
+  .project-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+  }
+  
+  /* Links inside the dropdown */
+  .project-dropdown-content p {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+
+  /* Change color of dropdown links on hover */
+  .project-dropdown-content p:hover{
+    background-color: #ddd;
+  }
+  .edit-option, .delete-option{
+    margin: 0;
+  }
+  /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+  .show {
+    display:block;
+}
+.clicked{
+    display: inline-block;
 }
