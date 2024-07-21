@@ -13,17 +13,22 @@ import {
     parseISO,
     startOfDay,
     startOfWeek,
-    endOfWeek
+    endOfWeek,
+    isBefore,
+    isFuture
   } from 'date-fns'
 
 // Define project IDs for special cases
 const TASK_IDS = {
+    INBOX: '1',
     TODAY: '2',
     UPCOMING: '3',
     ANYTIME: '4',
     COMPLETED: '5',
     OVERDUE: '6'
   }
+
+  
 
 class UI{
     static initialize() {
@@ -50,7 +55,16 @@ class UI{
         this.projectModalClose = document.getElementById("close-project");
         this.projectList = document.querySelector(".project-list");
         this.closeModalBtns = document.querySelectorAll('.close-modal');
-        
+
+        // default project divs
+        this.defaultProjects = [
+            document.getElementById("inbox-div"),
+            document.getElementById("today-div"),
+            document.getElementById("upcoming-div"),
+            document.getElementById("anytime-div"),
+            document.getElementById("completed-div"),
+            document.getElementById("overdue-div")
+        ];
     }
 
     static addEventListeners() {
@@ -63,31 +77,38 @@ class UI{
         this.projectModalClose.addEventListener("click", () => this.closeProjectModal());
         this.projectForm.addEventListener("submit", (event)=>this.handleProjectFormSubmit(event));
        
+        this.defaultProjects.forEach(project => {
+            project.addEventListener("click", (event) => this.handleDefaultProjectClick(event));
+        });
         
         this.closeModalBtns.forEach((closeModalBtn) => {
             closeModalBtn.addEventListener('click', () =>
               this.resetForm(closeModalBtn)
             )
-          });
-        
+          });    
     }
+
+    static handleDefaultProjectClick(event) {
+        const value = event.currentTarget.dataset.value;
+        this.loadProjectPage(value);
+    }
+
     // if the user checks the 'anytime' for the due date, disable the date input
     static handleAnytimeCheckbox() {
-        if (this.anytimeCheck.checked) {
-            this.dueDateInput.value = '';
-            this.dueDateInput.disabled = true;
-          } else {
-            this.dueDateInput.disabled = false;
-          }
+        if (this.dueDateInput.value) {
+            this.anytimeCheck.disabled = true;
+        } else {
+            this.anytimeCheck.disabled = false;
+        }
     }
 
     static handleDueInput() {
-        if (this.dueDateInput.value) {
-            this.anytimeCheck.checked = false;
-            this.anytimeCheck.disabled = true;
-          } else {
-            this.anytimeCheck.disabled = false;
-          }
+        if (this.anytimeCheck.checked) {
+            this.dueDateInput = true;
+            this.dueDateInput.value = ''; // Clear the date input if checkbox is checked
+        } else {
+            this.dueDateInput = false;
+        }
     }
     static displayProjectModal() {
         this.projectModal.style.display = "block";
@@ -108,14 +129,16 @@ class UI{
 
     
     static createTask(form, id = uuidv4()){
+        const parentProjectId = form.querySelector("#parent-project").value;
+        
         return new Task(
             form.querySelector("#task-content").value,
             form.querySelector("#priority").value,
             form.querySelector("#task-due").value,
             form.querySelector('#anytime').checked,
-            form.querySelector("#parent-project").value,
+            parentProjectId,
             id
-        )
+        );
     }
 
     static createProject(form, id = uuidv4()){
@@ -137,11 +160,10 @@ class UI{
             this.resetForm(
                 this.projectForm.closest('.project-modal').querySelector('.close-modal')
             );
-
             this.closeProjectModal();
             this.loadStorageProjects();
-            // add the project to one of the dropdown options in the add task form
             this.addProjectToTaskForm(newProject);
+
         } 
         
     }
@@ -150,31 +172,50 @@ class UI{
     static handleTaskFormSubmit(event) {
         event.preventDefault();
         if (this.taskForm.checkValidity()) {
-            // create new task object
             const newTask = this.createTask(this.taskForm);
-            const taskParent = newTask.parentProject; // 1 for inbox
-            
-            // 1. what project is it in? just Inbox or specific project
+            const taskParent = newTask.parentProject;
+            // first, add to either just Inbox or inbox+specific project
+            Storage.addTasktoProject(newTask, taskParent);
+            // determine due status and sort in appropriate project
+            const dueDateProject = this.sortTaskDueDate(newTask);
+            Storage.sortTaskByDueDate(newTask,dueDateProject);
 
-            // store new project to local storage
-            Storage.addTasktoProject(newTask,taskParent);// task object, name (string) of parent
-            this.resetForm(
-                this.taskForm.closest('.task-modal').querySelector('.close-modal')
-            );
-
+            this.resetForm(this.taskForm.closest('.task-modal').querySelector('.close-modal'));
             this.closeTaskModal();
             this.loadTasks(newTask.parentProject);
-        } 
+            this.loadProjectPage(taskParent);
+        }
 
     }
 
-  
+    static sortTaskDueDate(task) {
+        const dueDate = parseISO(task.due);
+        const anytime = task.anytime;
+        const today = startOfDay(new Date());
+        
+        const startOfDueDate = startOfDay(dueDate);
+
+        // Check if the task is due today, in the past, or in the future
+        const pastDue = isBefore(startOfDueDate, today);   
+        const dueToday = isToday(startOfDueDate);
+        const upcoming = isFuture(startOfDueDate) && !dueToday;
+
+        if (pastDue) {
+            return "6"
+        } else if (dueToday) {
+            return "2";     
+        } else if (upcoming) {
+            return "3";
+        } else if (anytime) {
+            return "4";
+        }
+    }
     
     static loadTasks(projectID) {
-        // add the task to the apporpriate task 
+        // add the task to the appropriate project 
         const project = Storage.getProject(projectID);
         const incompleteTasks = [];
-        const completedTasks = [];
+        //const completedTasks = [];
         project.tasks.forEach((task) => {
             if (task.completed) {
               completedTasks.push(task)
@@ -184,8 +225,8 @@ class UI{
           })
         // Append incomplete tasks first, then completed tasks
         incompleteTasks.forEach((task) => this.createTaskDiv(task));
-        completedTasks.forEach((task) => this.createTaskDiv(task));
-
+        //completedTasks.forEach((task) => this.createTaskDiv(task));
+        
 
       
     }
@@ -193,14 +234,13 @@ class UI{
         this.projectList.innerHTML = '';
         const projects = Storage.getProjects();
         projects.forEach((project) => {
-            if (!['1', '2', '3', '4', '5', '6'].includes(project.id)) {
-              this.createProjectDiv(project)
+            if (!Object.values(TASK_IDS).includes(project.id)) {
+                this.createProjectDiv(project);
             }
-          })
+        });
     }
 
     static addProjectToTaskForm(project){
-        //this.taskForm
         const taskFormProjectOption = document.createElement("option");
         taskFormProjectOption.value = project.id;
         taskFormProjectOption.textContent = project.title;
@@ -211,14 +251,19 @@ class UI{
 
     static populateTaskForm() {
         const projects = Storage.loadProjects();
+        
         projects.forEach(project => {
-            this.addProjectToTaskForm(project);
+            if (!['2', '3', '4', '5', '6'].includes(project.id)) {
+                this.addProjectToTaskForm(project);
+            }
+            
         });
     }
     
-    static createTaskDiv(task){
+    static createTaskDiv(task, currentProjectID){
         const taskItem = document.createElement("div");
         taskItem.classList.add("task-item");
+
         const taskCheckBox = document.createElement("input");
         taskCheckBox.type = "checkbox";
         
@@ -226,8 +271,13 @@ class UI{
         const taskDetailDiv = document.createElement("div");
         taskDetailDiv.classList.add("task-detail");
 
+        taskDetailDiv.appendChild(taskCheckBox);
+
         // task name
-        const taskContent = task.content;
+        const taskContent = document.createElement("div");
+        taskContent.classList.add("task-content")
+        taskContent.textContent = task.content;
+        taskDetailDiv.appendChild(taskContent);
 
         // div for task labels
         const taskLabels = document.createElement("div");
@@ -235,28 +285,30 @@ class UI{
 
         const taskDueDiv = document.createElement("div");
         taskDueDiv.classList.add("task-due-div");
-        const taskDue = task.due;
-        taskDueDiv.textContent = taskDue;
+        taskDueDiv.textContent = task.due;
 
         const taskPriorityDiv = document.createElement("div");
         taskPriorityDiv.classList.add("task-priority-div");
-        const taskPriority = task.priority;
-        taskPriorityDiv.textContent = taskPriority;
+        taskPriorityDiv.textContent = task.priority;
 
         const taskProjectDiv = document.createElement("div");
         taskProjectDiv.classList.add("task-project-div");
-        const taskProject = task.parentProject;
-        taskProjectDiv.textContent = taskProject;
+
+        // Retrieve project title
+        const project = Storage.getProject(task.parentProject);
 
         taskLabels.appendChild(taskDueDiv);
         taskLabels.appendChild(taskPriorityDiv);
-        taskLabels.appendChild(taskProjectDiv);
-
-        taskDetailDiv.appendChild(taskContent);
-        taskDetailDiv.appendChild(taskLabels);
-
-        taskItem.appendChild(taskCheckBox);
+        // Display parent project label only if not on the specific project page
+        if (task.parentProject !== currentProjectID && !['1','2', '3', '4', '5', '6'].includes(project.id)) {
+            taskProjectDiv.textContent = project.title;
+            taskLabels.appendChild(taskProjectDiv);
+        }
+        
+        
         taskItem.appendChild(taskDetailDiv);
+        taskItem.appendChild(taskLabels);
+        
         return taskItem;
     }
 
@@ -304,7 +356,7 @@ class UI{
         projectDropDown.appendChild(dropDownContent);
         projectItem.appendChild(projectDropDown);
         // 1. event listener for the project name div: once clicked, page will load project details
-        projectItemDiv.addEventListener("click", () => this.loadProjectPage(project));
+        projectItemDiv.addEventListener("click", () => this.loadProjectPage(project.id));
         // 2. event listener for project option button
         optionBtn.addEventListener("click", () => {
             dropDownContent.classList.toggle("show");
@@ -312,7 +364,7 @@ class UI{
             
         });
         // event listeners to handle project edit and delete option
-        editOption.addEventListener("click", ()=>this.handleEditOption(project, projectItemDiv));
+        editOption.addEventListener("click", ()=>this.handleEditOption(project.id, projectItemDiv));
         deleteOption.addEventListener("click", ()=> this.handleDeleteOption(project,projectItemDiv));
     
         // if user clicks anywhere else on the window, close
@@ -353,7 +405,10 @@ class UI{
         }
     }
 
-    static handleEditOption(project, projectItemDiv) {
+    static handleEditOption(projectID, projectItemDiv) {
+        const projects = Storage.loadProjects();
+        // identify project
+        const project = projects.find((proj) => proj.id === projectID);
         const projectEditModal = document.createElement("div");
         projectEditModal.classList.add("project-edit-modal");
         projectEditModal.style.display = "block";
@@ -418,13 +473,18 @@ class UI{
         event.preventDefault();
         
         if (projectEditForm.checkValidity()){
-            // edit UI
+            
+            // edit UI: sidebar element
             const originalTitle = projectItemDiv.querySelector(".project-title-p");
             const newTitle = projectEditForm.querySelector("#project-title-edit").value;
             const newDescription = projectEditForm.querySelector("#project-description-edit").value;
+            
             originalTitle.textContent = newTitle;
+            
             // also update project info in storage
             Storage.editProject(project.id, newTitle, newDescription);
+            this.loadProjectPage(project.id);
+            this.updateTaskFormParentProject(project)
             this.resetForm(
                 projectEditForm.closest('.project-edit-modal').querySelector('.close-modal')
             );
@@ -432,14 +492,40 @@ class UI{
         }
     }
 
+    // update project name in the add task form parent project dropdown
+    static updateTaskFormParentProject(project) {
+        const projects = Storage.loadProjects();
+        const projectID = project.id;
+        // identify project
+        const updatedProject = projects.find((proj) => proj.id === projectID);
+    
+        
+        const formParentSelectElem = this.taskForm.querySelector("#parent-project");
+        const originalParentOption = formParentSelectElem.querySelector(`option[value="${projectID}"]`);
+        
+        originalParentOption.textContent = updatedProject.title;
+    }
+
     // delete project from local storage as well as the UI
     static handleDeleteOption(project, projectItemDiv) {
+        // delete from task form 
+        const formParentSelectElem = this.taskForm.querySelector("#parent-project");
+        const originalParentOption = formParentSelectElem.querySelector(`option[value="${project.id}"]`);
+        originalParentOption.remove();
+        // delete the page 
+        this.taskSection.querySelector(".page-header").innerHTML = "";
+        this.taskSection.querySelector(".project-header-tasks").innerHTML = "";
         // modal to confirm deletion here (optional)
         // delete from storage
         Storage.deleteProject(project.id);
         projectItemDiv.remove();
+        
     }
-    static loadProjectPage(project) {
+    static loadProjectPage(projectID) {
+        const projects = Storage.loadProjects();
+        // identify project
+        const project = projects.find((proj) => proj.id === projectID);
+        this.taskSection.innerHTML = "";
         // project page header
         const projPageHeader = document.createElement("div");
         projPageHeader.classList.add("page-header");
@@ -463,10 +549,10 @@ class UI{
        // button to add task to this specific project 
         // loop through all the project items? then return taskitem div? then append those to the tasklist div
         project.tasks.forEach((task) => {
-            projPageTaskList.appendChild(this.createTaskDiv(task));
+            projPageTaskList.appendChild(this.createTaskDiv(task,projectID));
         })
 
-
+        
     }
 }
 
