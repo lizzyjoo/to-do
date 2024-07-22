@@ -30,19 +30,59 @@ const createDefaultTasks = () => {
 
     ]
 
-    return tasks
+    return tasks;
 
 }
 
+const createDefaultProjects = () => {
+    const projects = [
+        {
+            title: 'Inbox',
+            description: '',
+            tasks: [],
+            id: '1'
+        },
+        {
+            title: 'Today',
+            description: '',
+            tasks: [],
+            id: '2'
+        },
+        {
+            title: 'Upcoming',
+            description: '',
+            tasks: [],
+            id: '3'
+        },
+        {
+            title: 'Anytime',
+            description: '',
+            tasks: [],
+            id: '4'
+        },
+        {
+            title: 'Completed',
+            description: '',
+            tasks: [],
+            id: '5'
+        },
+        {
+            title: 'Overdue',
+            description: '',
+            tasks: [],
+            id: '6'
+        }
+    ]
+    return projects;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Add default projects and tasks
-  
     
-  
-    // Default tasks
-    const defaultTasks = createDefaultTasks()
-  
-    
-  
+    // Default Projects
+    const defaultProjects = createDefaultProjects();
+    defaultProjects.forEach((project) => Storage.addProject(project));
     UI.initialize()
+    // Default tasks
+    const defaultTasks = createDefaultTasks();
+
   });
