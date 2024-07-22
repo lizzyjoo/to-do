@@ -16,10 +16,22 @@ class Storage {
         return this.loadProjects();
     }
     // get specific project based on ID
-    static getProject (projectId) {
-        const projects = this.loadProjects()
-        return projects.find((proj) => proj.id === projectId)
-      }
+    static getProject(projectId) {
+        const projects = this.loadProjects();
+        return projects.find((proj) => proj.id === projectId);
+    }
+
+    static getTaskById(taskId) {
+        const projects = this.loadProjects();
+        for (const project of projects) {
+            const task = project.tasks.find(task => task.id === taskId);
+            if (task) {
+                return task;
+            }
+        }
+        return null; // Task not found
+    }
+
 
     //add a project to JSON projects
     static addProject(project){
@@ -31,21 +43,22 @@ class Storage {
           }
     }
 
-    // add a task
-    // notes: sorting a task item
-    // everything essentially belongs in inbox. value =1
-    // but depending on the due date, it can belong to today, upcoming, anytime, overdue
-    // completed: only contains items in which its completed bool value is true
-    // each custom made project has UUID. each project will contain both completed and non completed items
-    
     static addTasktoProject(task, projectID){
         const projects = this.loadProjects();
-        // identify project
         const project = projects.find((proj) => proj.id === projectID);
+        const inbox = projects.find((proj) => proj.id === '1');
+
         if (project) {
-            project.addTask(task)
-            this.updateProject(project)
-          }
+            if (project.id === '1') {
+                project.addTask(task);
+                this.updateProject(project);
+            } else {
+                project.addTask(task);
+                this.updateProject(project);
+                inbox.addTask(task);
+                this.updateProject(inbox);
+            }
+        }
     }
 
     static updateProject(updatedProject) {
@@ -63,13 +76,25 @@ class Storage {
         this.saveProjects(projects);
     }
 
-    static editProject(projectID){
+    static editProject(projectID, newTitle, newDescription){
         let projects = this.loadProjects();
         const project = projects.find((proj) => proj.id === projectID);
+        
         if (project){
-           
+           project.title = newTitle;
+           project.description = newDescription;
+           this.updateProject(project);
         }
     }
+
+    static sortTaskByDueDate(task, projectID) {
+        const projects = this.loadProjects();
+        // identify project
+        const project = projects.find((proj) => proj.id === projectID);
+        project.addTask(task);
+        this.updateProject(project);
+    }
+
 }
 
 export default Storage; 
