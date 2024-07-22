@@ -5,15 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
     isToday,
-    isTomorrow,
-    isYesterday,
-    isPast,
-    isWithinInterval,
-    formatDistanceToNow,
     parseISO,
     startOfDay,
-    startOfWeek,
-    endOfWeek,
     isBefore,
     isFuture
   } from 'date-fns'
@@ -36,14 +29,18 @@ class UI{
         this.domElements();
         this.addEventListeners();
         this.loadStorageProjects();
-        this.populateTaskForm()
+        this.populateTaskForm();
+        this.loadProjectPage(TASK_IDS.INBOX);
     }
 
     static domElements() {
+        this.logo = document.querySelector(".logo");
         this.addTaskBtn = document.getElementById("addTaskBtn");
         this.taskModal = document.getElementById("task-modal");
         this.taskForm = document.querySelector(".task-form");
         this.taskModalClose = document.getElementById("close-task");
+        this.errorMessageDiv = document.getElementById("form-error-message");
+
         this.taskSection = document.querySelector(".task-section");
         this.dueDateInput = document.querySelector("#task-due");
         this.anytimeCheck = document.querySelector("#anytime");
@@ -55,7 +52,7 @@ class UI{
         this.projectModalClose = document.getElementById("close-project");
         this.projectList = document.querySelector(".project-list");
         this.closeModalBtns = document.querySelectorAll('.close-modal');
-
+        this.checkboxes = document.querySelectorAll(".task-item input[type='checkbox']");
         // default project divs
         this.defaultProjects = [
             document.getElementById("inbox-div"),
@@ -76,7 +73,11 @@ class UI{
         this.addProjectBtn.addEventListener("click", () => this.displayProjectModal());
         this.projectModalClose.addEventListener("click", () => this.closeProjectModal());
         this.projectForm.addEventListener("submit", (event)=>this.handleProjectFormSubmit(event));
-       
+        this.logo.addEventListener("click", ()=> this.loadProjectPage("1"));
+        
+        this.checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', (event) => this.handleCheckboxChange(event));
+        })
         this.defaultProjects.forEach(project => {
             project.addEventListener("click", (event) => this.handleDefaultProjectClick(event));
         });
@@ -85,7 +86,8 @@ class UI{
             closeModalBtn.addEventListener('click', () =>
               this.resetForm(closeModalBtn)
             )
-          });    
+          });
+ 
     }
 
     static handleDefaultProjectClick(event) {
@@ -93,23 +95,89 @@ class UI{
         this.loadProjectPage(value);
     }
 
-    // if the user checks the 'anytime' for the due date, disable the date input
+    static handleCheckboxChange(event) {
+        const checkbox = event.target;
+        const taskId = checkbox.getAttribute('data-value'); // Get task ID from the checkbox's data-value attribute
+
+        if (taskId) {
+            // Get the task
+            const task = Storage.getTaskById(taskId);
+            if (task) {
+                task.completed = checkbox.checked; // Update the completed status based on the checkbox
+                
+                // Get all projects
+                const projects = Storage.getProjects();
+                // Update the task status in all relevant projects
+                projects.forEach((project) => {
+                    const taskInProject = project.tasks.find(t => t.id === taskId);
+                    if (taskInProject) {
+                        taskInProject.completed = task.completed;
+                        Storage.updateProject(project);
+                    }
+                });
+
+                // Handle adding/removing task from "Completed" project
+                const completedProject = projects.find(project => project.id === TASK_IDS.COMPLETED);
+                if (completedProject) {
+                    const taskInCompletedProject = completedProject.tasks.find(t => t.id === taskId);
+                    if (task.completed && !taskInCompletedProject) {
+                        // Add task to "Completed" project if not already there
+                        completedProject.tasks.push(task);
+                    } else if (!task.completed && taskInCompletedProject) {
+                        // Remove task from "Completed" project if it is there
+                        completedProject.tasks = completedProject.tasks.filter(t => t.id !== taskId);
+                    }
+                    Storage.updateProject(completedProject);
+                }
+                // Reload tasks for the current project page
+                const currentProjectId = this.taskSection.querySelector('.page-header .project-header-title').getAttribute('data-project-id');
+                this.loadProjectPage(currentProjectId);
+
+                // // Reload tasks for all affected projects
+                // this.loadAllProjects();
+                // this.loadProjectPage(task.parentProject);
+
+            }
+    }
+}
+
+static loadAllProjects() {
+        // Reload tasks for all default projects
+        this.defaultProjects.forEach(project => {
+            const projectId = project.dataset.value;
+            this.loadTasks(projectId);
+        });
+    }
+
+    // static handleCompletedTask(taskID){
+    //     // first, update the task status as well as the project that contains the task 
+    //     const projects = Storage.loadProjects();
+    //     for (const project of projects) {
+    //         const task = project.tasks.find(task => task.id === taskID);
+    //         if (task) {
+    //             task.completed = true; // Update the completed status
+    //             Storage.updateProject(project); // Save the updated project back to local storage
+    //             break;
+    //         }
+    //     }
+    // }
     static handleAnytimeCheckbox() {
-        if (this.dueDateInput.value) {
-            this.anytimeCheck.disabled = true;
+        if (this.anytimeCheck.checked) {
+            this.dueDateInput.disabled = true;  // Disable the date input
+            this.dueDateInput.value = '';       // Clear the date input
         } else {
-            this.anytimeCheck.disabled = false;
+            this.dueDateInput.disabled = false; // Enable the date input
+        }
+    }
+    
+    static handleDueInput() {
+        if (this.dueDateInput.value) {
+            this.anytimeCheck.disabled = true;  // Disable the 'anytime' checkbox if date is selected
+        } else {
+            this.anytimeCheck.disabled = false; // Enable the 'anytime' checkbox if date is cleared
         }
     }
 
-    static handleDueInput() {
-        if (this.anytimeCheck.checked) {
-            this.dueDateInput = true;
-            this.dueDateInput.value = ''; // Clear the date input if checkbox is checked
-        } else {
-            this.dueDateInput = false;
-        }
-    }
     static displayProjectModal() {
         this.projectModal.style.display = "block";
     }
@@ -171,6 +239,13 @@ class UI{
     // handle task form submission 
     static handleTaskFormSubmit(event) {
         event.preventDefault();
+        if (!this.dueDateInput.value && !this.anytimeCheck.checked) {
+            this.errorMessageDiv.textContent = "Please provide either a due date or check 'Anytime'.";
+            this.errorMessageDiv.style.display = "block";
+            return;
+        } else {
+            this.errorMessageDiv.style.display = "none";
+        }
         if (this.taskForm.checkValidity()) {
             const newTask = this.createTask(this.taskForm);
             const taskParent = newTask.parentProject;
@@ -184,6 +259,10 @@ class UI{
             this.closeTaskModal();
             this.loadTasks(newTask.parentProject);
             this.loadProjectPage(taskParent);
+
+            this.anytimeCheck.checked = false;
+            this.dueDateInput.disabled = false;
+            this.dueDateInput.value = '';
         }
 
     }
@@ -212,10 +291,11 @@ class UI{
     }
     
     static loadTasks(projectID) {
+        this.taskSection.innerHTML = "";
         // add the task to the appropriate project 
         const project = Storage.getProject(projectID);
         const incompleteTasks = [];
-        //const completedTasks = [];
+        const completedTasks = [];
         project.tasks.forEach((task) => {
             if (task.completed) {
               completedTasks.push(task)
@@ -224,9 +304,12 @@ class UI{
             }
           })
         // Append incomplete tasks first, then completed tasks
-        incompleteTasks.forEach((task) => this.createTaskDiv(task));
-        //completedTasks.forEach((task) => this.createTaskDiv(task));
-        
+        incompleteTasks.forEach((task) => {
+            this.taskSection.appendChild(this.createTaskDiv(task, projectID));
+        });
+        completedTasks.forEach((task) => {
+            this.taskSection.appendChild(this.createTaskDiv(task, projectID));
+        });
 
       
     }
@@ -238,6 +321,16 @@ class UI{
                 this.createProjectDiv(project);
             }
         });
+
+        // Update defaultProjects list
+        this.defaultProjects = [
+            document.getElementById("inbox-div"),
+            document.getElementById("today-div"),
+            document.getElementById("upcoming-div"),
+            document.getElementById("anytime-div"),
+            document.getElementById("completed-div"),
+            document.getElementById("overdue-div")
+        ];
     }
 
     static addProjectToTaskForm(project){
@@ -263,9 +356,14 @@ class UI{
     static createTaskDiv(task, currentProjectID){
         const taskItem = document.createElement("div");
         taskItem.classList.add("task-item");
+        
 
         const taskCheckBox = document.createElement("input");
+        taskCheckBox.classList.add("checkbox");
         taskCheckBox.type = "checkbox";
+        taskCheckBox.checked = task.completed;
+        taskCheckBox.setAttribute("data-value", task.id);
+        taskCheckBox.addEventListener('change', (event) => this.handleCheckboxChange(event));
         
         // task details
         const taskDetailDiv = document.createElement("div");
@@ -291,13 +389,23 @@ class UI{
         taskPriorityDiv.classList.add("task-priority-div");
         taskPriorityDiv.textContent = task.priority;
 
+        if (task.priority == "Low"){
+            taskPriorityDiv.classList.add("low");
+        } else if (task.priority == "Medium"){
+            taskPriorityDiv.classList.add("medium");
+        } else if (task.priority == "High"){
+            taskPriorityDiv.classList.add("high");
+        }
+
         const taskProjectDiv = document.createElement("div");
         taskProjectDiv.classList.add("task-project-div");
 
         // Retrieve project title
         const project = Storage.getProject(task.parentProject);
-
-        taskLabels.appendChild(taskDueDiv);
+        if (!task.anytime) {
+            taskLabels.appendChild(taskDueDiv);
+        }
+        
         taskLabels.appendChild(taskPriorityDiv);
         // Display parent project label only if not on the specific project page
         if (task.parentProject !== currentProjectID && !['1','2', '3', '4', '5', '6'].includes(project.id)) {
@@ -533,6 +641,7 @@ class UI{
         const projPageTitle = document.createElement("div");
         projPageTitle.classList.add("project-header-title");
         projPageTitle.textContent = project.title;
+        projPageTitle.setAttribute('data-project-id', projectID); // Add data-project-id attribute
         projPageHeader.appendChild(projPageTitle);
         // project description
         const projPageDescription = document.createElement("div");
@@ -546,12 +655,10 @@ class UI{
         projPageTaskList.classList.add("project-header-tasks");
         this.taskSection.appendChild(projPageTaskList);
 
-       // button to add task to this specific project 
-        // loop through all the project items? then return taskitem div? then append those to the tasklist div
+       // button to add task to this specific project
         project.tasks.forEach((task) => {
             projPageTaskList.appendChild(this.createTaskDiv(task,projectID));
-        })
-
+        });
         
     }
 }
