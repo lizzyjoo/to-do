@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from 'uuid'
 
 class Task {
-    constructor (content, priority, due, parentProject, id=uuidv4()) {
+    constructor (content, priority, due, anytime, parentProject, id) {
         this.content = content;
         this.priority = priority;
         this.due = due;
-        this.parentProject = parentProject;
+        this.anytime = anytime;
+        this.parentProject = parentProject; // id
         this.completed = false;
         this.id = id;
     }
@@ -14,7 +15,8 @@ class Task {
     }
 
     static convertJSON(json){
-        const task = new Task(json.content, json.priority, json.due, json.parentProject, json.id);
+      
+        const task = new Task(json.content, json.priority, json.due, json.anytime, json.parentProject, json.id);
         task.completed = json.completed;
         return task;
     }
