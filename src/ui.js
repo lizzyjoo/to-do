@@ -256,7 +256,7 @@ class UI{
                 taskEditModal.appendChild(taskModalContent);
                 this.sidebar.appendChild(taskEditModal);
 
-                deleteButton.addEventListener('click', () => this.handleDeleteTaskButtonClick(task, taskEditModal));
+                deleteButton.addEventListener('click', () => this.handleDeleteTaskButtonClick(task, taskEditModal, taskItem));
                 closeModal.addEventListener('click', () =>{
                     this.resetForm(closeModal);
                     taskEditModal.style.display = "none";
@@ -268,7 +268,7 @@ class UI{
         }
     }
 
-    static handleDeleteTaskButtonClick(task,taskEditModal) {
+    static handleDeleteTaskButtonClick(task,taskEditModal, taskItem) {
         const projects = Storage.getProjects();
         projects.forEach((project) => {
             const taskInProject = project.tasks.find(t => t.id === task.id);
@@ -278,6 +278,7 @@ class UI{
             }
         });
         taskEditModal.style.display = "none";
+        taskItem.remove();
         this.loadProjectPage(this.taskSection.querySelector('.page-header .project-header-title').getAttribute('data-project-id'));
     }
     
