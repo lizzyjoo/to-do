@@ -1,3 +1,4 @@
+/* Global Styles */
 *{
     font-family: "DM Sans", sans-serif;
     font-optical-sizing: auto;
@@ -8,6 +9,15 @@ body{
     margin: 0;
 }
 
+/* Header */
+
+header{
+  width: 100vw;
+  margin: 0 auto;
+  background-color: #e0afa0;
+  box-shadow: rgba(136, 165, 191, 0.48) 6px 2px 16px 0px, rgba(255, 255, 255, 0.8) -6px -2px 16px 0px;
+}
+
 .logo {
     display: flex;
     gap: 6px;
@@ -15,15 +25,7 @@ body{
     font-size: 26px;
     cursor: pointer;
 }
-
-header{
-    width: 100vw;
-    margin: 0 auto;
-    background-color: #e0afa0;
-    box-shadow: rgba(136, 165, 191, 0.48) 6px 2px 16px 0px, rgba(255, 255, 255, 0.8) -6px -2px 16px 0px;
-    
-}
-
+/* Sidebar */
 .sidebar{
     height: 100vh;
     width: 300px;
@@ -36,9 +38,18 @@ header{
     padding: 10px 20px 0 20px;
     font-size: 22px;
     gap: 4px;
-   
 }
 
+.add-task-div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-task-text{
+  font-size: 20px;
+}
+/* Buttons */
 #addTaskBtn{
     cursor: pointer;
     background-image: url("./assets/task-add.svg");
@@ -50,7 +61,22 @@ header{
     border-radius: 50%;
     border-style: hidden;
     background-color:#f4f3ee;
+}
 
+#addTaskBtnProj {
+  cursor: pointer;
+  background-image: url("./assets/task-add.svg");
+  background-size: 20px;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-color: #f4f3ee;
+  border-radius: 50%;
+  border-style: hidden;
+  background-color:#f4f3ee;
+  width: 30px;
+  height: 30px;
+  border-style: hidden;
+  
 }
 
 #addTaskBtn:hover{
@@ -71,6 +97,7 @@ header{
     background-color:#f4f3ee;
 }
 
+/* default projects on sidebar */
 .default-project-labels{
     display: flex;
     flex-direction: column;
@@ -98,7 +125,7 @@ header{
 }
 
 /* The Modal (background) */
-.project-modal, .task-modal, .project-edit-modal {
+.project-modal, .task-modal, .project-edit-modal, .task-edit-modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
     z-index: 1; /* Sit on top */
@@ -145,10 +172,11 @@ header{
     justify-content: space-between;
   }
 
+/* project/task forms */
 .project-form, .task-form{
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
 }
 .project-form{
@@ -158,7 +186,7 @@ header{
 .project-form-input:focus {
     border: 3px solid #e0afa0;
 }
-.project-form-input{
+.project-form-input, .task-form-input{
     text-decoration: none;
     outline: none;
     padding: 6px;
@@ -171,20 +199,14 @@ header{
     height: 50px;
     overflow:auto;
 }
-.project-submit{
-    background-color: #f4f3ee;
-    color: #463f3a;
-    border: 2px solid #e0afa0;
-    text-align: center;
-    text-decoration: none;
-}
+
 
 .project-list{
     display: flex;
     flex-direction: column;
     padding: 20px;
-
 }
+
 .project-item{
     display: flex;
     max-height: 40px;
@@ -196,10 +218,12 @@ header{
     font-style: italic;
     position: relative;
 }
+
 .project-item-div{
   display: flex;
   cursor: pointer;
 }
+
 /* Project Dropdown Button */
 .project-option {
     background-image: url("./assets/project-option.svg");
@@ -257,7 +281,7 @@ header{
   .edit-option, .delete-option{
     margin: 0;
   }
-  /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+  /* Show the dropdown menu */
   .show {
     display:block;
 }
@@ -278,7 +302,6 @@ header{
 
 .project-header-title{
   font-size: 30px;
-  
 }
 
 .project-header-description {
@@ -310,7 +333,13 @@ header{
   display: flex;
   gap: 8px;
   padding-left: 44px;
+  
 }
+
+.task-labels {
+  cursor: pointer;
+}
+
 .task-due-div, .task-priority-div, .task-project-div{
   border-style: solid;
   border-color: #8a817c;
@@ -331,7 +360,6 @@ header{
 .task-priority-div.high{
   background-color: #fcd7d7;
   color: black;
-  
 }
 
 .task-detail input[type="checkbox"] {
@@ -368,3 +396,45 @@ header{
 
 }
 
+.edit-form-btns{
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+#task-submit, .delete-btn, .project-submit{
+  background-color: f4f3ee(51, 51, 51, 0.05);
+  border-radius: 8px;
+  border-width: 0;
+  color: #333333;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  text-align: center;
+  transition: all 200ms;
+  vertical-align: baseline;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.task-form-row{
+  display: flex;
+  gap: 6px;
+}
+
+.due-row, .anytime-row{
+  display: flex;
+  gap: 6px;
+}
+
+#due-anytime{
+  gap: 30px;
+}
