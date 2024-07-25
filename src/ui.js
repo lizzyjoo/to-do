@@ -272,7 +272,7 @@ class UI{
         const projects = Storage.getProjects();
         projects.forEach((project) => {
             const taskInProject = project.tasks.find(t => t.id === task.id);
-            if (taskInProject && project.id !== "1") { // Remove from all projects except 'Inbox'
+            if (taskInProject) { // Remove from all projects except 'Inbox'
                 project.removeTask(task);
                 Storage.updateProject(project);
             }
