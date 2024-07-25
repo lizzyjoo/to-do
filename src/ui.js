@@ -1011,7 +1011,6 @@ static loadAllProjects() {
             const projectId = div.getAttribute('data-value');
             // Get the count of tasks for this project from Storage
             const taskCount = Storage.getTaskCountByProjectId(projectId);
-            console.log(projectId, taskCount);
             // Update the button text
             const button = div.querySelector('.task-count-button');
             if (button) {
