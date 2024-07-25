@@ -1021,6 +1021,4 @@ static loadAllProjects() {
     }
 }
 
-
-
 export default UI;
