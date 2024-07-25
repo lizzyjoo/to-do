@@ -12,6 +12,15 @@ class Project{
     addTask(task) {
         this.tasks.push(task);
     }
+
+    removeTask(task) {
+        const taskId = task.id;
+        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+
+        if (taskIndex !== -1) {
+            this.tasks.splice(taskIndex, 1);
+        }
+    }
     
     editTitle(newTitle) {
         this.title = newTitle;
