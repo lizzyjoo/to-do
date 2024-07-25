@@ -329,6 +329,13 @@ class UI{
     
     static handleTaskEditFormSubmit(event, task, taskForm, taskItem) {
         event.preventDefault();
+        if (!this.dueDateInput.value && !this.anytimeCheck.checked) {
+            this.errorMessageDiv.textContent = "Please provide either a due date or check 'Anytime'.";
+            this.errorMessageDiv.style.display = "block";
+            return;
+        } else { 
+            this.errorMessageDiv.style.display = "none";
+        }
     
         if (taskForm.checkValidity()) {
             const newContent = taskForm.querySelector("#task-content").value;
