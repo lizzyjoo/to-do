@@ -1001,7 +1001,6 @@ static loadAllProjects() {
         
         taskDivs.forEach(div => {
             const projectId = div.getAttribute('data-value');
-            
             // Get the count of tasks for this project from Storage
             const taskCount = Storage.getTaskCountByProjectId(projectId);
             console.log(projectId, taskCount);
