@@ -1,7 +1,8 @@
 /* Global Styles */
 *{
-    font-family: "DM Sans", sans-serif;
-    font-optical-sizing: auto;
+  font-family: "Poppins", sans-serif;
+  font-weight: 200;
+  font-style: normal;
 }
 body{
     display: flex;
@@ -128,7 +129,10 @@ header{
     font-size: 22px;
     cursor: pointer;
     position: relative;
+}
 
+.task-div svg{
+  margin-right: 5px;
 }
 .task-div:hover{
   background-color: #bcb8b1;
