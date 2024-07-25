@@ -97,6 +97,24 @@ header{
     background-color:#f4f3ee;
 }
 
+.task-count-button {
+  position: absolute;
+  right: 10px; /* Distance from the right edge of the task-div */
+  top: 50%;
+  transform: translateY(-50%); 
+  width: 20px; 
+  height: 20px; 
+  padding: 0; 
+  text-align: center; 
+  line-height: 20px; 
+  border: 1px solid #6c625b;
+  border-radius: 50%; 
+  background-color: #6c625b;
+  font-size: 12px;
+  box-sizing: border-box;
+  color: white;
+
+}
 /* default projects on sidebar */
 .default-project-labels{
     display: flex;
@@ -105,8 +123,11 @@ header{
 }
 
 .task-div{
+    display: flex;
     font-size: 22px;
     cursor: pointer;
+    position: relative;
+
 }
 .task-div:hover{
   background-color: #bcb8b1;
