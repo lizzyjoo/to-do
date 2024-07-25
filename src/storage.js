@@ -13,10 +13,12 @@ class Storage {
         // converts plain object back into instance of project class
         return projects.map((project) => Project.convertJSON(project));
     }
+
     // get all projects
     static getProjects() {
         return this.loadProjects();
     }
+
     // get specific project based on ID
     static getProject(projectId) {
         const projects = this.loadProjects();
@@ -31,7 +33,6 @@ class Storage {
         projects.forEach(project => {
             tasks = tasks.concat(project.tasks);
         });
-
         return tasks;
     }
 
@@ -131,6 +132,7 @@ class Storage {
         projects = projects.filter((proj) => proj.id !== projectID);
         this.saveProjects(projects);
     }
+
     // edit project
     static editProject(projectID, newTitle, newDescription){
         let projects = this.loadProjects();
@@ -151,8 +153,7 @@ class Storage {
         if (project) {
             project.addTask(task);
             this.updateProject(project);
-        }
-        
+        } 
     }
 
 }
