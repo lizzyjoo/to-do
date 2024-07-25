@@ -44,17 +44,20 @@
                                 <option value="High">High</option>
                             </select>
                         </div>
-                        <div class="task-form-row">
-                            <label id="due-label" for="task-due">Due Date</label>
-                            <input type="date" id="task-due">
-                            <label for="anytime">Anytime</label>
-                            <input type="checkbox" id="anytime" name="anytime">
-                            
+                        <div class="task-form-row" id="due-anytime">
+                            <div class="due-row">
+                                <label id="due-label" for="task-due">Due Date</label>
+                                <input type="date" id="task-due">
+                            </div>
+                            <div class="anytime-row">
+                                <label for="anytime">Anytime</label>
+                                <input type="checkbox" id="anytime" name="anytime">
+                            </div>
                         </div>
                         <div class="task-form-row">
                             <label id="parent-project-label" for="parent-project">Project</label>
                             <select id="parent-project">
-                                <!--<option value="1">Inbox</option> -->
+                                
                             </select>
                         </div>
                         <input type="submit" value="Add Task" id="task-submit">
