@@ -20,6 +20,7 @@ const TASK_IDS = {
     COMPLETED: '5',
     OVERDUE: '6'
   }
+const customProjects = [];
 
   
 
@@ -53,6 +54,7 @@ class UI{
         this.projectList = document.querySelector(".project-list");
         this.closeModalBtns = document.querySelectorAll('.close-modal');
         this.checkboxes = document.querySelectorAll(".task-item input[type='checkbox']");
+        
         // default project divs
         this.defaultProjects = [
             document.getElementById("inbox-div"),
@@ -94,52 +96,370 @@ class UI{
         const value = event.currentTarget.dataset.value;
         this.loadProjectPage(value);
     }
+    
 
-    static handleCheckboxChange(event) {
-        const checkbox = event.target;
-        const taskId = checkbox.getAttribute('data-value'); // Get task ID from the checkbox's data-value attribute
+    static handleTaskItemClick(taskItem) {
+        const checkbox = taskItem.querySelector(".checkbox");
+        const taskId = checkbox.getAttribute('data-value');
 
         if (taskId) {
-            // Get the task
             const task = Storage.getTaskById(taskId);
             if (task) {
-                task.completed = checkbox.checked; // Update the completed status based on the checkbox
+                // show modal 
+                const taskEditModal = document.createElement("div");
+                taskEditModal.classList.add("task-edit-modal");
+                taskEditModal.style.display = "block";
+
+                 // Create the main container div
+                const taskModalContent = document.createElement('div');
+                taskModalContent.className = 'task-modal-content';
+                taskModalContent.id = 'task-modal-content';
                 
-                // Get all projects
-                const projects = Storage.getProjects();
-                // Update the task status in all relevant projects
-                projects.forEach((project) => {
-                    const taskInProject = project.tasks.find(t => t.id === taskId);
-                    if (taskInProject) {
-                        taskInProject.completed = task.completed;
-                        Storage.updateProject(project);
-                    }
+                // Create the modal header
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'modal-header';
+
+                // Add the header title
+                const headerTitle = document.createElement('h2');
+                headerTitle.textContent = 'Edit Task';
+                modalHeader.appendChild(headerTitle);
+
+                // Add the close button
+                const closeModal = document.createElement('span');
+                closeModal.className = 'close-modal';
+                closeModal.id = 'close-task';
+                closeModal.innerHTML = '&times;';
+                modalHeader.appendChild(closeModal);
+
+                // Append the modal header to the main container
+                taskModalContent.appendChild(modalHeader);
+
+                // Create the form element
+                const taskForm = document.createElement('form');
+                taskForm.className = 'task-form';
+
+                // Add the task name input
+                const taskNameInput = document.createElement('input');
+                taskNameInput.type = 'text';
+                taskNameInput.className = 'task-form-input';
+                taskNameInput.id = 'task-content';
+                taskNameInput.value = task.content;
+                taskNameInput.required = true;
+                taskForm.appendChild(taskNameInput);
+
+                // Create the priority row
+                const priorityRow = document.createElement('div');
+                priorityRow.className = 'task-form-row';
+
+                // Add the priority label
+                const priorityLabel = document.createElement('label');
+                priorityLabel.id = 'task-priority-label';
+                priorityLabel.setAttribute('for', 'priority');
+                priorityLabel.textContent = 'Priority';
+                priorityRow.appendChild(priorityLabel);
+
+                // Add the priority select
+                const prioritySelect = document.createElement('select');
+                prioritySelect.id = 'priority';
+
+                // Add priority options
+                const lowOption = document.createElement('option');
+                lowOption.value = 'Low';
+                lowOption.textContent = 'Low';
+                prioritySelect.appendChild(lowOption);
+
+                const mediumOption = document.createElement('option');
+                mediumOption.value = 'Medium';
+                mediumOption.textContent = 'Medium';
+                prioritySelect.appendChild(mediumOption);
+
+                const highOption = document.createElement('option');
+                highOption.value = 'High';
+                highOption.textContent = 'High';
+                prioritySelect.appendChild(highOption);
+
+                priorityRow.appendChild(prioritySelect);
+                taskForm.appendChild(priorityRow);
+
+                // Create the due date row
+                const dueDateRow = document.createElement('div');
+                dueDateRow.className = 'task-form-row';
+                dueDateRow.id = "due-anytime";
+                const dueRow = document.createElement("div");
+                dueRow.classList.add("due-row");
+                const anytimeRow = document.createElement("div");
+                anytimeRow.classList.add("anytime-row");
+                
+                // Add the due date label
+                const dueDateLabel = document.createElement('label');
+                dueDateLabel.id = 'due-label';
+                dueDateLabel.setAttribute('for', 'task-due');
+                dueDateLabel.textContent = 'Due Date';
+                dueRow.appendChild(dueDateLabel);
+
+                // Add the due date input
+                const dueDateInput = document.createElement('input');
+                dueDateInput.value = task.due;
+                dueDateInput.type = 'date';
+                dueDateInput.id = 'task-due';
+                dueRow.appendChild(dueDateInput);
+
+                // Add the anytime checkbox
+                const anytimeLabel = document.createElement('label');
+                anytimeLabel.setAttribute('for', 'anytime');
+                anytimeLabel.textContent = 'Anytime';
+                anytimeRow.appendChild(anytimeLabel);
+
+                const anytimeCheckbox = document.createElement('input');
+                anytimeCheckbox.type = 'checkbox';
+                anytimeCheckbox.id = 'anytime';
+                anytimeCheckbox.name = 'anytime';
+                anytimeRow.appendChild(anytimeCheckbox);
+
+                dueDateRow.appendChild(dueRow);
+                dueDateRow.appendChild(anytimeRow);
+                taskForm.appendChild(dueDateRow);
+
+                // Create the project row
+                const projectRow = document.createElement('div');
+                projectRow.className = 'task-form-row';
+
+                // submit and delete button divs
+                const editBtns = document.createElement("div");
+                editBtns.classList.add("edit-form-btns");
+
+                // Add the submit button
+                const submitButton = document.createElement('input');
+                submitButton.type = 'submit';
+                submitButton.value = 'Edit Task';
+                submitButton.id = 'task-submit';
+                editBtns.appendChild(submitButton);
+
+                // Add the delete button
+                const deleteButton = document.createElement("button");
+                deleteButton.classList.add("delete-btn");
+                deleteButton.textContent = "Delete Task";
+                deleteButton.id = "task-delete";
+                editBtns.appendChild(deleteButton);
+                taskForm.appendChild(editBtns);
+
+                // Add the error message div
+                const errorMessage = document.createElement('div');
+                errorMessage.id = 'form-error-message';
+                errorMessage.style.color = 'red';
+                errorMessage.style.display = 'none';
+                taskForm.appendChild(errorMessage);
+
+                // Append the form to the main container
+                taskModalContent.appendChild(taskForm);
+                taskEditModal.appendChild(taskModalContent);
+                this.sidebar.appendChild(taskEditModal);
+
+                deleteButton.addEventListener('click', () => this.handleDeleteTaskButtonClick(task, taskEditModal));
+                closeModal.addEventListener('click', () =>{
+                    this.resetForm(closeModal);
+                    taskEditModal.style.display = "none";
                 });
-
-                // Handle adding/removing task from "Completed" project
-                const completedProject = projects.find(project => project.id === TASK_IDS.COMPLETED);
-                if (completedProject) {
-                    const taskInCompletedProject = completedProject.tasks.find(t => t.id === taskId);
-                    if (task.completed && !taskInCompletedProject) {
-                        // Add task to "Completed" project if not already there
-                        completedProject.tasks.push(task);
-                    } else if (!task.completed && taskInCompletedProject) {
-                        // Remove task from "Completed" project if it is there
-                        completedProject.tasks = completedProject.tasks.filter(t => t.id !== taskId);
-                    }
-                    Storage.updateProject(completedProject);
-                }
-                // Reload tasks for the current project page
-                const currentProjectId = this.taskSection.querySelector('.page-header .project-header-title').getAttribute('data-project-id');
-                this.loadProjectPage(currentProjectId);
-
-                // // Reload tasks for all affected projects
-                // this.loadAllProjects();
-                // this.loadProjectPage(task.parentProject);
+                // add event listner to form for form submit; update project
+                taskForm.addEventListener("submit", (event) => {this.handleTaskEditFormSubmit(event, task, taskForm, taskItem)});
 
             }
+        }
     }
-}
+
+    static handleDeleteTaskButtonClick(task,taskEditModal) {
+        const projects = Storage.getProjects();
+        projects.forEach((project) => {
+            const taskInProject = project.tasks.find(t => t.id === task.id);
+            if (taskInProject && project.id !== "1") { // Remove from all projects except 'Inbox'
+                project.removeTask(task);
+                Storage.updateProject(project);
+            }
+        });
+        taskEditModal.style.display = "none";
+        this.loadProjectPage(this.taskSection.querySelector('.page-header .project-header-title').getAttribute('data-project-id'));
+    }
+    
+    static setupEditTaskForm(task, taskForm, taskItem) {
+        // Add event listener to the delete button
+        const deleteButton = taskForm.querySelector("#delete-task-button");
+        deleteButton.addEventListener("click", () => this.handleDeleteTaskButtonClick(task.id));
+    
+        // Existing form submission handling
+        taskForm.addEventListener("submit", (event) => this.handleTaskEditFormSubmit(event, task, taskForm, taskItem));
+    }
+
+    static handleCheckboxChange(event, taskId) {
+        const taskCheckbox = event.target;
+        const isChecked = taskCheckbox.checked;
+    
+        // Retrieve the task
+        const task = Storage.getTaskById(taskId);
+        if (!task) return;
+    
+        // Update the task completion status
+        task.completed = isChecked;
+    
+        // Update the task in storage
+        Storage.updateTask(task);
+    
+        // Update the task's appearance in the UI
+        const taskDiv = document.querySelector(`.task-detail[data-value="${taskId}"]`);
+        if (taskDiv) {
+            if (isChecked) {
+                taskDiv.classList.add('completed');
+    
+                // Move the task to the Completed project page
+                const completedProjectDiv = document.querySelector('.task-div[data-value="5"]');
+                if (completedProjectDiv) {
+                    completedProjectDiv.appendChild(taskDiv);
+                }
+            } else {
+                taskDiv.classList.remove('completed');
+    
+                // Move the task back to its original project page
+                const originalProjectDiv = document.querySelector(`.task-div[data-value="${task.parentProject}"]`);
+                if (originalProjectDiv) {
+                    originalProjectDiv.appendChild(taskDiv);
+                }
+            }
+        }
+    }
+    
+    static handleTaskEditFormSubmit(event, task, taskForm, taskItem) {
+        event.preventDefault();
+    
+        if (taskForm.checkValidity()) {
+            const newContent = taskForm.querySelector("#task-content").value;
+            const newPriority = taskForm.querySelector("#priority").value;
+            const newDue = taskForm.querySelector("#task-due").value || ''; // '', date
+            const anytime = taskForm.querySelector("#anytime").checked; // true/false
+    
+            // Update the task object
+            task.content = newContent;
+            task.priority = newPriority;
+            task.due = newDue;
+            task.anytime = anytime;
+    
+            // Previous parent project
+            const taskPrevParentProjectID = task.parentProject;
+            const projects = Storage.getProjects();
+    
+            // Handle due date & anytime logic
+            this.updateTaskDueDateAndProject(task, newDue, anytime, taskPrevParentProjectID, projects);
+    
+            // Update the task in all projects
+            this.updateTaskInProjects(task, newContent, newPriority, newDue, anytime, taskPrevParentProjectID, projects);
+    
+            // Update the task item UI to reflect new parent project
+            const currentProjectId = this.taskSection.querySelector('.page-header .project-header-title').getAttribute('data-project-id');
+            const updatedTaskItem = this.createTaskDiv(task, currentProjectId);
+            taskItem.replaceWith(updatedTaskItem);
+    
+            // Refresh the project page and close modal
+            this.loadProjectPage(currentProjectId);
+            this.resetForm(taskForm.closest('.task-edit-modal').querySelector('.close-modal'));
+            taskForm.closest('.task-edit-modal').style.display = "none";
+        }
+    }
+    
+    static updateTaskDueDateAndProject(task, newDue, anytime, taskPrevParentProjectID, projects) {
+        const updateTaskAndProject = (newDue, anytime) => {
+            task.due = newDue;
+            task.anytime = anytime;
+            const newProjectID = this.sortTaskDueDate(task);
+    
+            // Remove from previous project
+            const prevProject = projects.find(proj => proj.id === taskPrevParentProjectID);
+            if (prevProject && prevProject.id!=="1") {
+                prevProject.removeTask(task);
+                Storage.updateProject(prevProject);
+            }
+    
+            // Special handling for the "anytime" project
+            const anytimeProject = projects.find(proj => proj.id === "4");
+            if (anytimeProject) {
+                const taskIndex = anytimeProject.tasks.findIndex(t => t.id === task.id);
+                if (taskIndex !== -1) {
+                    anytimeProject.tasks.splice(taskIndex, 1);
+                    Storage.updateProject(anytimeProject);
+                }
+            }
+            const upcomingProject = projects.find(proj => proj.id === "3");
+            if (upcomingProject) {
+                const taskIndex = upcomingProject.tasks.findIndex(t => t.id === task.id);
+                if (taskIndex !== -1) {
+                    upcomingProject.tasks.splice(taskIndex, 1);
+                    Storage.updateProject(upcomingProject);
+                }
+            }
+            const todayProject = projects.find(proj => proj.id === "2");
+            if (todayProject) {
+                const taskIndex = todayProject.tasks.findIndex(t => t.id === task.id);
+                if (taskIndex !== -1) {
+                    todayProject.tasks.splice(taskIndex, 1);
+                    Storage.updateProject(todayProject);
+                }
+            }
+            const overdueProject = projects.find(proj => proj.id === "6");
+            if (overdueProject) {
+                const taskIndex = overdueProject.tasks.findIndex(t => t.id === task.id);
+                if (taskIndex !== -1) {
+                    overdueProject.tasks.splice(taskIndex, 1);
+                    Storage.updateProject(overdueProject);
+                }
+            }
+    
+            // Add to new appropriate project
+            if (newProjectID !== "1" && newProjectID !== "4") {
+                const newProject = projects.find(proj => proj.id === newProjectID);
+                if (newProject) {
+                    newProject.addTask(task);
+                    Storage.updateProject(newProject);
+                }
+            }
+        };
+    
+        if (task.due !== "" && newDue !== "" && anytime === false) {
+            updateTaskAndProject(newDue, false);
+        } else if (task.due !== "" && anytime && newDue === "") {
+            updateTaskAndProject("", true);
+        } else if (anytime) {
+            updateTaskAndProject("", true);
+        } else if (task.due === "" && newDue !== "" && anytime === false) {
+            updateTaskAndProject(newDue, false);
+        }
+    }
+    
+    static updateTaskInProjects(task, newContent, newPriority, newDue, anytime, taskPrevParentProjectID, projects) {
+        projects.forEach((project) => {
+            const taskInProject = project.tasks.find(t => t.id === task.id);
+            if (taskInProject) {
+                taskInProject.content = newContent;
+                taskInProject.priority = newPriority;
+                taskInProject.due = newDue;
+                taskInProject.anytime = anytime;
+    
+                // Remove task from previous project if due date changed and project is not 'Inbox' or 'anytime'
+                if (project.id === taskPrevParentProjectID && project.id !== "1" && project.id !== "4") {
+                    project.removeTask(task);
+                    Storage.updateProject(project);
+                }
+    
+                Storage.updateProject(project);
+            }
+        });
+    
+        // Ensure task is removed from 'anytime' project if due date is added
+        const anytimeProject = projects.find(proj => proj.id === "4");
+        if (anytimeProject) {
+            const taskIndex = anytimeProject.tasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                anytimeProject.tasks.splice(taskIndex, 1);
+                Storage.updateProject(anytimeProject);
+            }
+        }
+    }
 
 static loadAllProjects() {
         // Reload tasks for all default projects
@@ -149,18 +469,6 @@ static loadAllProjects() {
         });
     }
 
-    // static handleCompletedTask(taskID){
-    //     // first, update the task status as well as the project that contains the task 
-    //     const projects = Storage.loadProjects();
-    //     for (const project of projects) {
-    //         const task = project.tasks.find(task => task.id === taskID);
-    //         if (task) {
-    //             task.completed = true; // Update the completed status
-    //             Storage.updateProject(project); // Save the updated project back to local storage
-    //             break;
-    //         }
-    //     }
-    // }
     static handleAnytimeCheckbox() {
         if (this.anytimeCheck.checked) {
             this.dueDateInput.disabled = true;  // Disable the date input
@@ -223,6 +531,8 @@ static loadAllProjects() {
         if (this.projectForm.checkValidity()) {
             // create new project object
             const newProject = this.createProject(this.projectForm);
+            customProjects.push(newProject.id);
+           
             // store new project to local storage
             Storage.addProject(newProject);
             this.resetForm(
@@ -271,7 +581,6 @@ static loadAllProjects() {
         const dueDate = parseISO(task.due);
         const anytime = task.anytime;
         const today = startOfDay(new Date());
-        
         const startOfDueDate = startOfDay(dueDate);
 
         // Check if the task is due today, in the past, or in the future
@@ -280,7 +589,7 @@ static loadAllProjects() {
         const upcoming = isFuture(startOfDueDate) && !dueToday;
 
         if (pastDue) {
-            return "6"
+            return "6";
         } else if (dueToday) {
             return "2";     
         } else if (upcoming) {
@@ -356,28 +665,26 @@ static loadAllProjects() {
     static createTaskDiv(task, currentProjectID){
         const taskItem = document.createElement("div");
         taskItem.classList.add("task-item");
-        
 
         const taskCheckBox = document.createElement("input");
         taskCheckBox.classList.add("checkbox");
         taskCheckBox.type = "checkbox";
         taskCheckBox.checked = task.completed;
         taskCheckBox.setAttribute("data-value", task.id);
-        taskCheckBox.addEventListener('change', (event) => this.handleCheckboxChange(event));
+        taskCheckBox.addEventListener('change', (event) => this.handleCheckboxChange(event, task.id));
         
-        // task details
+        // Task details
         const taskDetailDiv = document.createElement("div");
         taskDetailDiv.classList.add("task-detail");
-
         taskDetailDiv.appendChild(taskCheckBox);
 
-        // task name
+        // Task name
         const taskContent = document.createElement("div");
-        taskContent.classList.add("task-content")
+        taskContent.classList.add("task-content");
         taskContent.textContent = task.content;
         taskDetailDiv.appendChild(taskContent);
 
-        // div for task labels
+        // Div for task labels
         const taskLabels = document.createElement("div");
         taskLabels.classList.add("task-labels");
 
@@ -389,11 +696,11 @@ static loadAllProjects() {
         taskPriorityDiv.classList.add("task-priority-div");
         taskPriorityDiv.textContent = task.priority;
 
-        if (task.priority == "Low"){
+        if (task.priority == "Low") {
             taskPriorityDiv.classList.add("low");
-        } else if (task.priority == "Medium"){
+        } else if (task.priority == "Medium") {
             taskPriorityDiv.classList.add("medium");
-        } else if (task.priority == "High"){
+        } else if (task.priority == "High") {
             taskPriorityDiv.classList.add("high");
         }
 
@@ -402,21 +709,32 @@ static loadAllProjects() {
 
         // Retrieve project title
         const project = Storage.getProject(task.parentProject);
+
         if (!task.anytime) {
             taskLabels.appendChild(taskDueDiv);
+        } if (task.anytime) {
+            taskDueDiv.remove();
         }
-        
+
         taskLabels.appendChild(taskPriorityDiv);
+
+        
         // Display parent project label only if not on the specific project page
         if (task.parentProject !== currentProjectID && !['1','2', '3', '4', '5', '6'].includes(project.id)) {
             taskProjectDiv.textContent = project.title;
             taskLabels.appendChild(taskProjectDiv);
         }
-        
-        
+
         taskItem.appendChild(taskDetailDiv);
         taskItem.appendChild(taskLabels);
-        
+
+        taskLabels.addEventListener('click', () => this.handleTaskItemClick(taskItem));
+        // if (currentProjectID === '1' || customProjects.includes(task.parentProject)) {
+        //     taskLabels.addEventListener('click', () => this.handleTaskItemClick(taskItem));
+        // }
+        // if (!['2', '3', '4', '5', '6'].includes(currentProjectID)) {
+        //     taskLabels.addEventListener('click', () => this.handleTaskItemClick(taskItem));
+        // }
         return taskItem;
     }
 
@@ -572,8 +890,6 @@ static loadAllProjects() {
         });
         // add event listner to form for form submit; update project
         projectEditForm.addEventListener("submit", (event) => {this.handleEditFormSubmit(event,projectEditForm,projectItemDiv, project)});
-
-
     }
 
     // handle project edit form 
@@ -634,6 +950,7 @@ static loadAllProjects() {
         // identify project
         const project = projects.find((proj) => proj.id === projectID);
         this.taskSection.innerHTML = "";
+
         // project page header
         const projPageHeader = document.createElement("div");
         projPageHeader.classList.add("page-header");
@@ -658,7 +975,22 @@ static loadAllProjects() {
        // button to add task to this specific project
         project.tasks.forEach((task) => {
             projPageTaskList.appendChild(this.createTaskDiv(task,projectID));
+            
         });
+
+        const addTaskBtnDiv = document.createElement("div");
+        addTaskBtnDiv.classList.add("add-task-div");
+        const addTaskBtn = document.createElement("button");
+        addTaskBtn.id = "addTaskBtnProj";
+        addTaskBtnDiv.appendChild(addTaskBtn);
+
+        const addTaskText = document.createElement("p");
+        addTaskText.classList.add("add-task-text");
+        addTaskText.textContent = "Add Task";
+
+        addTaskBtnDiv.appendChild(addTaskText);
+        this.taskSection.appendChild(addTaskBtnDiv);
+        addTaskBtn.addEventListener("click", () => this.displayTaskModal());
         
     }
 }
