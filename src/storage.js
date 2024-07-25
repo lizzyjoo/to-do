@@ -156,6 +156,14 @@ class Storage {
         } 
     }
 
+    static getTaskCountByProjectId(projectID) {
+        let projects = this.loadProjects();
+        const project = projects.find((proj) => proj.id === projectID);
+        // Assuming tasks are stored with project ID information
+        return project ? project.tasks.length : 0;
+    }
+
+
 }
 
 export default Storage; 
