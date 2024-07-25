@@ -32,6 +32,7 @@ class UI{
         this.loadStorageProjects();
         this.populateTaskForm();
         this.loadProjectPage(TASK_IDS.INBOX);
+        this.updateTaskCounts();
     }
 
     static domElements() {
@@ -54,7 +55,7 @@ class UI{
         this.projectList = document.querySelector(".project-list");
         this.closeModalBtns = document.querySelectorAll('.close-modal');
         this.checkboxes = document.querySelectorAll(".task-item input[type='checkbox']");
-        
+
         // default project divs
         this.defaultProjects = [
             document.getElementById("inbox-div"),
@@ -991,8 +992,29 @@ static loadAllProjects() {
         addTaskBtnDiv.appendChild(addTaskText);
         this.taskSection.appendChild(addTaskBtnDiv);
         addTaskBtn.addEventListener("click", () => this.displayTaskModal());
+        this.updateTaskCounts();
+        
+    }
+    static updateTaskCounts() {
+       // Get all task-divs
+        const taskDivs = document.querySelectorAll('.task-div');
+        
+        taskDivs.forEach(div => {
+            const projectId = div.getAttribute('data-value');
+            
+            // Get the count of tasks for this project from Storage
+            const taskCount = Storage.getTaskCountByProjectId(projectId);
+            console.log(projectId, taskCount);
+            // Update the button text
+            const button = div.querySelector('.task-count-button');
+            if (button) {
+                button.textContent = taskCount;
+            }
+        });
         
     }
 }
+
+
 
 export default UI;
